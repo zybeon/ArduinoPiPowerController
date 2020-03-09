@@ -4,8 +4,8 @@ int RELAY_PIN = 2;
 int BUTTON_PIN = 0;
 int LED_PIN = 1;
 
-bool AUTOPWR = 0; // 0 for auto off | 1 for auto on when plugged in
-bool MOM_TOGGLE = 1; // 1 for momentary | 0 for toggle
+bool AUTOPWR = 1; // 0 for auto off | 1 for auto on when plugged in (off when using toggle switch)
+bool MOM_TOGGLE = 0; // 1 for momentary | 0 for toggle
 bool RELAY_MODE = 0; // 0 for LOW on | 1 for HIGH on
 
 int checkOffCount = 0;
@@ -22,57 +22,57 @@ int buttondowncount = 0;
 int buttonupcount = 0;
 
 void setup(){
-	// put your setup code here, to run once:
-	pinMode(LED_PIN, OUTPUT); //LED 
-	pinMode(RELAY_PIN, OUTPUT); //Power Relay
-	pinMode(BUTTON_PIN, INPUT);  //Button
-	pinMode(PI_SHDWN, OUTPUT); //Shutdown trigger
-	pinMode(PI_POWER, INPUT); //Sense Pi Power
-	
-  if(AUTOPWR)//Setting auto power status on power up.
-		powerstatus = 1;
-	else
-		powerstatus = 0;
+  // put your setup code here, to run once:
+  pinMode(LED_PIN, OUTPUT); //LED 
+  pinMode(RELAY_PIN, OUTPUT); //Power Relay
+  pinMode(BUTTON_PIN, INPUT);  //Button
+  pinMode(PI_SHDWN, OUTPUT); //Shutdown trigger
+  pinMode(PI_POWER, INPUT); //Sense Pi Power
+  
+  if(AUTOPWR && MOM_TOGGLE)//Setting auto power status on power up.
+    powerstatus = 1;
+  else
+    powerstatus = 0;
 }
 
 void loop() {
 
   //Read the state of the button/swtich into a local variable:
-	bool reading = !digitalRead(BUTTON_PIN);
-	
-	if(MOM_TOGGLE) //Mommentary button check
-	{
-		
-		if(buttondowncount>1000)
-			buttondowncount = 0;
-		if(buttonupcount>1000)
-			buttonupcount = 0;
-		
-		if (reading) {
-			// Reset the debouncing timer
-			buttonupcount = 0;
-			buttondowncount = buttondowncount + 1;
-		}
-		if (!reading)
-		{
-			buttonupcount = buttonupcount + 1;
-			if(buttondowncount>=60 && buttonupcount >2)
-			{//Long Pressed Button
-				buttondowncount = 0;
-				buttonupcount = 0;
-				powerstatus = 4;
-			}
-			else if(buttondowncount>=3 && buttonupcount >2)
-			{//Button Pressed
-				buttondowncount = 0;
-				buttonupcount = 0;
-				if(powerstatus==0)
-					powerstatus=1;
-				else if(powerstatus==1)
-					powerstatus=2;
-			}
-		}
-	}
+  bool reading = !digitalRead(BUTTON_PIN);
+  
+  if(MOM_TOGGLE) //Mommentary button check
+  {
+    
+    if(buttondowncount>1000)
+      buttondowncount = 0;
+    if(buttonupcount>1000)
+      buttonupcount = 0;
+    
+    if (reading) {
+      // Reset the debouncing timer
+      buttonupcount = 0;
+      buttondowncount = buttondowncount + 1;
+    }
+    if (!reading)
+    {
+      buttonupcount = buttonupcount + 1;
+      if(buttondowncount>=60 && buttonupcount >2)
+      {//Long Pressed Button
+        buttondowncount = 0;
+        buttonupcount = 0;
+        powerstatus = 4;
+      }
+      else if(buttondowncount>=3 && buttonupcount >2)
+      {//Button Pressed
+        buttondowncount = 0;
+        buttonupcount = 0;
+        if(powerstatus==0)
+          powerstatus=1;
+        else if(powerstatus==1)
+          powerstatus=2;
+      }
+    }
+  }
   else
   {
     if(powerstatus==0){
@@ -86,7 +86,7 @@ void loop() {
       }
     }
     else if(powerstatus==1){
-      if(reading)
+      if(!reading)
         checkOffCount = checkOffCount + 1;
       else
       checkOffCount=0;
@@ -96,23 +96,23 @@ void loop() {
       }
     }
   }
-	if(powerstatus==0) //Power off
-	{
-		digitalWrite(LED_PIN, LOW);
-		if(RELAY_MODE)
-			digitalWrite(RELAY_PIN, LOW);
-		else
-			digitalWrite(RELAY_PIN, HIGH);
-	}
-	else if(powerstatus==1) //Power on
-	{
-		digitalWrite(PI_SHDWN, LOW);
-		digitalWrite(LED_PIN, HIGH);
-		if(RELAY_MODE)
-			digitalWrite(RELAY_PIN, HIGH);
-		else
-			digitalWrite(RELAY_PIN, LOW); 
-	}
+  if(powerstatus==0) //Power off
+  {
+    digitalWrite(LED_PIN, LOW);
+    if(RELAY_MODE)
+      digitalWrite(RELAY_PIN, LOW);
+    else
+      digitalWrite(RELAY_PIN, HIGH);
+  }
+  else if(powerstatus==1) //Power on
+  {
+    digitalWrite(PI_SHDWN, LOW);
+    digitalWrite(LED_PIN, HIGH);
+    if(RELAY_MODE)
+      digitalWrite(RELAY_PIN, HIGH);
+    else
+      digitalWrite(RELAY_PIN, LOW); 
+  }
   else if(powerstatus==2) //Powering off
   {
     digitalWrite(PI_SHDWN, HIGH);
@@ -157,7 +157,7 @@ void loop() {
   else if(powerstatus==4) //Hard shutdown
   {
     powerstatus = 0;
-		checkOffCount = 0;
+  checkOffCount = 0;
   }
-	delay(50);
+  delay(50);
 }
